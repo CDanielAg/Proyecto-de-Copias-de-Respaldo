@@ -18,19 +18,8 @@ echo Carpeta de backups: %backupFolder%
 echo Fecha y hora actual: %currentDateTime%
 echo.
 
-REM Contar archivos antiguos
-set "filesFound=0"
-forfiles /p "%backupFolder%" /m *.bak /d -15 /c "cmd /c set /a filesFound+=1"
-echo Archivos antiguos encontrados: %filesFound%
-
-REM Eliminar archivos antiguos
-echo Eliminando archivos antiguos...
-forfiles /p "%backupFolder%" /m *.bak /d -15 /c "cmd /c del /q @path"
-
-REM Verificar si se eliminaron archivos
-set "filesDeleted=0"
-forfiles /p "%backupFolder%" /m *.bak /d -15 /c "cmd /c set /a filesDeleted+=1"
-echo Archivos eliminados: %filesDeleted%
+REM Contar archivos antiguos usando PowerShell
+powershell -Command "try { $files = Get-ChildItem '%backupFolder%' -Filter '*.bak' | Where-Object { $_.LastWriteTime -le (Get-Date).AddDays(-15) }; if ($files.Count -eq 0) { Write-Host 'No se encontraron archivos antiguos para eliminar.' } else { Write-Host 'Archivos antiguos encontrados: ' $files.Count; foreach ($file in $files) { Remove-Item $file.FullName -Force; Write-Host 'Archivo eliminado: ' $file.Name } } } catch { Write-Host 'Error en el proceso:' $_.Exception.Message }"
 
 REM Mostrar resumen
 echo.
@@ -39,8 +28,6 @@ echo Resumen del proceso de limpieza
 echo ===============================
 echo Fecha y hora: %currentDateTime%
 echo Carpeta de backups: %backupFolder%
-echo Archivos antiguos encontrados: %filesFound%
-echo Archivos eliminados: %filesDeleted%
 echo Estado: Completado
 echo ===============================
 
